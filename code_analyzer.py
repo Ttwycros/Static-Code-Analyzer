@@ -13,7 +13,8 @@ class CodeAnalyzer(object):
                    7: "S007 Too many spaces after construction_name (def or class)",
                    8: "S008 Class name class_name should be written in CamelCase",
                    9: "S009 Function name function_name should be written in snake_case"}
-    template_camel = r"(?:[A-Z][a-z]+)+"
+    template_camel = r"(?:[A-Z])(?:\S?)+(?:[A-Z])(?:[a-z])+"
+    template_camel1 = r"^(?:[A-Z][a-z0-9]*)+"
     template_snake = r""
 
     def __init__(self, file):
@@ -94,25 +95,26 @@ class CodeAnalyzer(object):
                 end_index = original_string.index(")")
             except ValueError:
                 print("SyntaxError: '(' was never closed")
+                # so there can be something implemented
                 return None
             else:
-                return original_string[start_index+1:end_index]
+                return original_string[start_index + 1:end_index]
         else:
             return None
 
     def check_camel_case(self):
-
-        template_camel = r"^(?:[A-Z][a-z]*)+"
+        #template_camel = r"^(?:[A-Z][a-z0-9]*)+"
         for counter, line in enumerate(self.file_lines):
             line = line.lstrip().rstrip()
-            print(f"\nline num ={counter} {line.startswith('Class')} _{line}_")
+            #print(f"\nline num ={counter} {line.startswith('Class')} _{line}_")
             if line.startswith("Class"):
                 str_inside = self.sub_parentheses(line)
                 if str_inside:
                     #print(f"inside ({str_inside})")
-                    variable = re.findall(template_camel, str_inside)
+                    variable = re.findall(CodeAnalyzer.template_camel, str_inside)
                     if not variable:
-                        print("there is not camelCase inside parentheses")
+                        #print("there is not camelCase inside parentheses")
+                        self.error_add(counter + 1, 8)
                         continue
                 """start_index = line.find("(")
                 if start_index != -1:
@@ -128,26 +130,69 @@ class CodeAnalyzer(object):
                             print("there is not camelCase")
                             continue"""
 
-
                 #another_template = r"\(.*\)"
                 line = line.removeprefix("Class").lstrip()
                 #print(f"inside of ({re.findall(another_template, line)})")
                 #lines = line.split()
+                #print(f"lines outside = '{line}'")
+                if not line or line == ":":
+                    print("camel case empty")
+                    continue
                 #print(f"split = {lines}")
-                variable = re.findall(template_camel, line)
+                variable = re.findall(CodeAnalyzer.template_camel, line)
                 #print(f"var {variable}")
                 if not variable:
-                    print("there is not camelCase outside")
+                    #print("there is not camelCase outside")
+                    self.error_add(counter + 1, 8)
+                    continue
+
+    def check_spacing_after_name(self):
+        for counter, line in enumerate(self.file_lines):
+            line = line.lstrip().rstrip()
+            if line.startswith("Class") or line.startswith("def"):
+                start_index = line.find(" ")
+                #print(f"\nline ={counter+1} before = '{line}' index {start_index}")
+                if start_index != -1:
+                    line = line[start_index:]
+                else:
+                    print(f"no space {counter + 1}")
+                    continue
+                #print(f"spacing = '{line}'")
+                indent_len = len(line) - len(line.lstrip(" "))
+                if indent_len > 1:
+                    self.error_add(counter + 1, 7)
+
+    def check_snake_case(self):
+        template_snake = r"^(?:[A-Z][a-z0-9]*)+"
+        for counter, line in enumerate(self.file_lines):
+            line = line.lstrip().rstrip()
+            if line.startswith("def"):
+                print(f"\nline num ={counter} _{line}_")
+                line = line.removeprefix("def").lstrip()
+                #print(f"inside of ({re.findall(another_template, line)})")
+                #lines = line.split()
+                #print(f"lines outside = '{line}'")
+                if not line or line == ":":
+                    print("snake case empty")
+                    continue
+                #print(f"split = {lines}")
+                variable = re.findall(template_snake, line)
+                #print(f"var {variable}")
+                if not variable:
+                    #print("there is not camelCase outside")
+                    self.error_add(counter + 1, 9)
                     continue
 
     def pep_checks_wrapper(self):
-        self.check_lines_length()
+        """self.check_lines_length()
         self.check_indent()
         self.check_semicolon()
         self.check_inline_comment()
         self.check_todo()
-        self.check_new_lines()
+        self.check_new_lines()"""
         self.check_camel_case()
+        #self.check_snake_case()
+        #self.check_spacing_after_name()
 
     def getter_filename(self):
         return self.file
