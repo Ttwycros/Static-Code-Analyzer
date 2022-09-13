@@ -86,17 +86,59 @@ class CodeAnalyzer(object):
                 blank_lines_count = 0
                 continue
 
+    @staticmethod
+    def sub_parentheses(original_string):
+        start_index = original_string.find("(")
+        if start_index != -1:
+            try:
+                end_index = original_string.index(")")
+            except ValueError:
+                print("SyntaxError: '(' was never closed")
+                return None
+            else:
+                return original_string[start_index+1:end_index]
+        else:
+            return None
+
     def check_camel_case(self):
+
         template_camel = r"^(?:[A-Z][a-z]*)+"
         for counter, line in enumerate(self.file_lines):
-            line = line.lstrip()
-            # line.lstrip().startswith("Class")
-            print(f"line num ={counter} {line.startswith('Class')} {line}")
+            line = line.lstrip().rstrip()
+            print(f"\nline num ={counter} {line.startswith('Class')} _{line}_")
             if line.startswith("Class"):
+                str_inside = self.sub_parentheses(line)
+                if str_inside:
+                    #print(f"inside ({str_inside})")
+                    variable = re.findall(template_camel, str_inside)
+                    if not variable:
+                        print("there is not camelCase inside parentheses")
+                        continue
+                """start_index = line.find("(")
+                if start_index != -1:
+                    try:
+                        end_index = line.index(")")
+                    except ValueError:
+                        print("SyntaxError: '(' was never closed")
+                    else:
+                        str_inside = line[start_index+1:end_index]
+                        print(f"inside ({str_inside})")
+                        variable = re.findall(template_camel, str_inside)
+                        if not variable:
+                            print("there is not camelCase")
+                            continue"""
+
+
+                #another_template = r"\(.*\)"
                 line = line.removeprefix("Class").lstrip()
-                print(line)
+                #print(f"inside of ({re.findall(another_template, line)})")
+                #lines = line.split()
+                #print(f"split = {lines}")
                 variable = re.findall(template_camel, line)
-                print(f"{variable}")
+                #print(f"var {variable}")
+                if not variable:
+                    print("there is not camelCase outside")
+                    continue
 
     def pep_checks_wrapper(self):
         self.check_lines_length()
