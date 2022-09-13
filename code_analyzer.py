@@ -9,7 +9,12 @@ class CodeAnalyzer(object):
                    3: "S003 Unnecessary semicolon",
                    4: "S004 At least two spaces required before inline comments",
                    5: "S005 TODO found",
-                   6: "S006 More than two blank lines used before this line"}
+                   6: "S006 More than two blank lines used before this line",
+                   7: "S007 Too many spaces after construction_name (def or class)",
+                   8: "S008 Class name class_name should be written in CamelCase",
+                   9: "S009 Function name function_name should be written in snake_case"}
+    template_camel = r"(?:[A-Z][a-z]+)+"
+    template_snake = r""
 
     def __init__(self, file):
         self.file = file
@@ -81,6 +86,18 @@ class CodeAnalyzer(object):
                 blank_lines_count = 0
                 continue
 
+    def check_camel_case(self):
+        template_camel = r"^(?:[A-Z][a-z]*)+"
+        for counter, line in enumerate(self.file_lines):
+            line = line.lstrip()
+            # line.lstrip().startswith("Class")
+            print(f"line num ={counter} {line.startswith('Class')} {line}")
+            if line.startswith("Class"):
+                line = line.removeprefix("Class").lstrip()
+                print(line)
+                variable = re.findall(template_camel, line)
+                print(f"{variable}")
+
     def pep_checks_wrapper(self):
         self.check_lines_length()
         self.check_indent()
@@ -88,6 +105,7 @@ class CodeAnalyzer(object):
         self.check_inline_comment()
         self.check_todo()
         self.check_new_lines()
+        self.check_camel_case()
 
     def getter_filename(self):
         return self.file
@@ -97,6 +115,7 @@ class CodeAnalyzer(object):
         for error in self.errors:
             print(f'{self.file}: Line {error[0]}: {CodeAnalyzer.error_codes[error[1]]}')
         return ""
+
 
 class FileFinder(object):
 
@@ -116,17 +135,18 @@ class FileFinder(object):
         else:
             print("sorry your path is not gonna make it")
 
-    def _execute(self):
+    def execute_(self):
         for file in self.exec:
-            #print(f"file: {file.getter_filename()}")
+            # print(f"file: {file.getter_filename()}")
             file.pep_checks_wrapper()
             print(file, end="")
 
+
 if __name__ == "__main__":
-    #print(f"Arguments count: {len(sys.argv)}")
+    # print(f"Arguments count: {len(sys.argv)}")
     for i, arg in enumerate(sys.argv):
         if i > 0:
-            #print(f"i = {i}: {arg}")
+            # print(f"i = {i}: {arg}")
             new = FileFinder(arg)
-            new._execute()
+            new.execute_()
             del new
