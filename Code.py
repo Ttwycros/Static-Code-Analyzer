@@ -18,16 +18,16 @@ def kek_Lol
 def long_def_test_case:
 def long_test case_with multiple_words
 def :
-Class rRemovesuffix:
-Class Removesuffix
-Class Removesuffix:
-Class Remov8esuffix
-Class Remov8esuffix:
-Class Remov8_esuffix:
-Class Remov_8esuffix:
-Class Removesu4ffixC sdfsdf:
-Class RemovesuffixC sdfsdf(:
-Class RemovesuffixC sdfsdf():
-Class      RemoveTest     Sdfsdf:
-Class      RemoveTest     Sdfsdf(line):
-Class RemovesuffixC(PenisHer):
+class rRemovesuffix:
+class Removesuffix
+class Removesuffix:
+class Remov8esuffix
+class Remov8esuffix:
+class Remov8_esuffix:
+class Remov_8esuffix:
+class Removesu4ffixC sdfsdf:
+class RemovesuffixC sdfsdf(:
+class RemovesuffixC sdfsdf():
+class      RemoveTest     Sdfsdf:
+class      RemoveTest     Sdfsdf(line):
+class RemovesuffixC(PenisHer):

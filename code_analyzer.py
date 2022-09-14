@@ -1,4 +1,4 @@
-import re
+from re import search
 import os.path
 import sys
 import time
@@ -171,50 +171,57 @@ class CodeAnalyzer(object):
 
     def check_camel_case(self):
         for counter, line in enumerate(self.file_lines):
-            line = line.lstrip().rstrip()
+            line = line.strip()
             if line.startswith("class"):
                 line = line.removeprefix("class").lstrip()
                 if not line or line == ":":
                     print("camel case empty")
                     continue
-                variable = re.search(CodeAnalyzer.template_camel, line)
-                if not variable:
+                if not search(CodeAnalyzer.template_camel, line):
                     self.error_add(counter + 1, 8)
                     continue
 
     def check_spacing_after_name(self):
         for counter, line in enumerate(self.file_lines):
-            line = line.lstrip().rstrip()
+            line = line.lstrip()
             if line.startswith("class") or line.startswith("def"):
-                if re.search(r"^def  ", line) is not None or re.search(r"class  ", line) is not None:
-                    self.error_add(counter + 1, 7)
+                start_index = line.find(" ")
+                if start_index != -1:
+                    outline = line[start_index:]
+                    indent_len = len(outline) - len(outline.lstrip())
+                    if indent_len > 1:
+                        self.error_add(counter + 1, 7)
+
+                """if search(r"^def  ", line) is not None or search(r"class  ", line) is not None:
+                    self.error_add(counter + 1, 7)"""
 
     def check_snake_case(self):
         for counter, line in enumerate(self.file_lines):
-            line = line.lstrip().rstrip(" \n:")
+            line = line.strip(" \n:")
             if line.startswith("def"):
                 line = line.removeprefix("def").lstrip()
                 if not line or line == ":":
                     print("snake case empty")
                     continue
-                variable = re.search(CodeAnalyzer.template_snake, line)
-                if not variable:
+                if not search(CodeAnalyzer.template_snake, line):
                     self.error_add(counter + 1, 9)
                     continue
 
     def pep_checks_wrapper(self):
+        """Individually calling a function if actually faster than "for each cycle"""
         """for self.counter, self.line in enumerate(self.file_lines):
             self.class_check_lines_length()
             self.class_check_indent()
             self.class_check_semicolon()
             self.class_check_inline_comment()
-            self.class_check_todo()
-        for counter, line in enumerate(self.file_lines):
+            self.class_check_todo()"""
+        """for counter, line in enumerate(self.file_lines):
             self.local_check_lines_length(counter, line)
             self.local_check_indent(counter, line)
             self.local_check_semicolon(counter, line)
             self.local_check_inline_comment(counter, line)
             self.local_check_todo(counter, line)"""
+        """Individually calling a function if actually faster than "for each cycle"""
         self.check_lines_length()
         self.check_indent()
         self.check_semicolon()
@@ -264,6 +271,12 @@ class FileFinder(object):
             file.pep_checks_wrapper()
             print(file, end="")
 
+    def execute_time(self):
+        for file in self.exec:
+            # print(f"file: {file.getter_filename()}")
+            file.pep_checks_wrapper()
+            #print(file, end="")
+
 
 def timer(func):
     def wrapper(args_for_function):
@@ -279,7 +292,7 @@ def timer(func):
 @timer
 def func1(arg):
     new = FileFinder(arg)
-    new.execute_()
+    new.execute_time()
     del new
 
 if __name__ == "__main__":
@@ -287,8 +300,8 @@ if __name__ == "__main__":
     for i, arg in enumerate(sys.argv):
         if i > 0:
             #print(f"i = {i}: _{arg}_")
-            #func1(arg)
-            new = FileFinder(arg)
+            func1(arg)
+            """new = FileFinder(arg)
             new.execute_()
-            del new
+            del new"""
 
