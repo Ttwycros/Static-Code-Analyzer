@@ -2,6 +2,7 @@ from re import search
 import os.path
 import sys
 import time
+import ast
 
 
 class CodeAnalyzer(object):
@@ -300,8 +301,8 @@ if __name__ == "__main__":
     for i, arg in enumerate(sys.argv):
         if i > 0:
             #print(f"i = {i}: _{arg}_")
-            func1(arg)
-            """new = FileFinder(arg)
+            #func1(arg)
+            new = FileFinder(arg)
             new.execute_()
-            del new"""
+            del new
 
