@@ -164,7 +164,6 @@ class CodeAnalyzer(object):
                     indent_len = len(outline) - len(outline.lstrip())
                     if indent_len > 1:
                         self.error_add(counter + 1, 7)
-
                 """if search(r"^def  ", line) is not None or search(r"class  ", line) is not None:
                     self.error_add(counter + 1, 7)"""
 
@@ -193,36 +192,12 @@ class CodeAnalyzer(object):
                     body = tree.body[0]
                     #print(body.name, [b.arg for b in body.args.args], [ast.dump(a) for a in  body.args.defaults])
                     defaults_par = [a for a in body.args.defaults if isinstance(a, ast.List)]
-                    #print(defaults_par)
                     if defaults_par:
                         self.error_add(counter + 1, 12)
-                    #print([search(CodeAnalyzer.template_snake, b.arg) for b in body.args.args])
                     for var_names in body.args.args:
                         if not search(CodeAnalyzer.template_snake, var_names.arg):
                             self.error_add(counter + 1, 10)
                             continue
-
-
-        """print("tree obj",self.tree)
-        #print("tree dump",ast.dump(self.tree))
-        # [a.name for a in tree.body[0].names])
-        for class_ in self.tree.body:
-            print("class obj",class_)
-            if isinstance(class_, ast.ClassDef):
-                #print("module is instanse of Class")
-                for function in class_.body:
-                    print("_________")
-                    print("funk obj",function)
-                    #print("funk dump", ast.dump(function))
-                    print("funk.args dump", ast.dump(function.args))
-                    if function.args.defaults:
-                        print("not empty")
-                        self.error_add(counter + 12, 12)
-                    for something in function.args.defaults:
-                        print("\nfunk.args.defaults dump", ast.dump(something))
-                    print("_________")
-                    #if ast.dump(function.args.defaults) is not None:
-                    #    print(ast.dump(function.args.defaults))"""
 
     def check_var_assert(self):
         for counter, line in enumerate(self.file_lines):
