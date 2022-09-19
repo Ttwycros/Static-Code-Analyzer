@@ -7,6 +7,34 @@ import re
 import ast
 
 
+class Analyzer(ast.NodeVisitor):
+    def __init__(self):
+        self.stats = {"import": [], "from": [], "class": []}
+        self.imports = []
+
+    def visit_ClassDef(self, node):
+        print()
+        for alias in node.names:
+            self.stats["class"].append(alias.name)
+
+    def visit_Import(self, node):
+        for alias in node.names:
+            self.stats["import"].append(alias.name)
+            self.imports.append(alias.name)
+        self.generic_visit(node)
+
+    def visit_ImportFrom(self, node):
+        for alias in node.names:
+            self.stats["from"].append(alias.name)
+        self.generic_visit(node)
+
+    def report(self):
+        print(self.stats)
+
+    def import_list(self):
+        return self.imports
+
+
 class CodeAnalyzer(object):
     error_codes = {1: "S001 Too long",
                    2: "S002 Indentation is not a multiple of four",
@@ -16,7 +44,10 @@ class CodeAnalyzer(object):
                    6: "S006 More than two blank lines used before this line",
                    7: "S007 Too many spaces after construction_name (def or class)",
                    8: "S008 Class name class_name should be written in CamelCase",
-                   9: "S009 Function name function_name should be written in snake_case"}
+                   9: "S009 Function name function_name should be written in snake_case",
+                   10: "S010 Argument name arg_name should be written in snake_case",
+                   11: "S011 Variable var_name should be written in snake_case",
+                   12: "S012 The default argument value is mutable"}
     template_camel = r"(^[A-Z][a-z0-9]+)([A-Z][a-z0-9]+)*\s*(\(.*\))?:?$"
     template_snake = r"(^[_a-z0-9]+)(_[a-z0-9]+)*\s*(\(.*\))?:?$"
 
@@ -25,6 +56,12 @@ class CodeAnalyzer(object):
         try:
             with open(self.file) as f:
                 self.file_lines = f.readlines()
+            with open(self.file) as f:
+                try:
+                    self.tree = ast.parse(f.read())
+                except SyntaxError:
+                    self.tree = []
+                    print("error")
         except FileNotFoundError:
             print("Path Does not exist")
             self.file_lines = []
@@ -37,73 +74,6 @@ class CodeAnalyzer(object):
     def error_add(self, line, error_code):
         """Adds error code, line is number of line where is the error occurred, error code is self explanatory"""
         self.errors.append([line, error_code])  # line and code
-
-    def class_check_lines_length(self):
-        if len(self.line) > 79:
-            self.error_add(self.counter + 1, 1)
-
-    def class_check_indent(self):
-        if self.line.startswith(" "):
-            indent_len = len(self.line) - len(self.line.lstrip(" "))
-            if indent_len % 4 != 0:
-                self.error_add(self.counter + 1, 2)
-
-    def class_check_semicolon(self):
-        data = self.line.split("#")[0].rstrip()
-        try:
-            if data[-1] == ";":
-                self.error_add(self.counter + 1, 3)
-        except IndexError:
-            pass
-
-    def class_check_inline_comment(self):
-        data = self.line.split("#")
-        try:
-            if data[1]:
-                indent_len = len(data[0]) - len(data[0].rstrip(" "))
-                if indent_len < 2 and len(data[0]) > 1:
-                    self.error_add(self.counter + 1, 4)
-        except IndexError:
-            pass
-
-    def class_check_todo(self):
-        line = self.line
-        if "#" in line and "todo" in line.lower():
-            if line.index("#") < line.lower().index("todo"):
-                self.error_add(self.counter + 1, 5)
-
-    def local_check_lines_length(self, counter, line):
-        if len(line) > 79:
-            self.error_add(counter + 1, 1)
-
-    def local_check_indent(self, counter, line):
-        if line.startswith(" "):
-            indent_len = len(line) - len(line.lstrip(" "))
-            if indent_len % 4 != 0:
-                self.error_add(counter + 1, 2)
-
-    def local_check_semicolon(self, counter, line):
-        data = line.split("#")[0].rstrip()
-        try:
-            if data[-1] == ";":
-                self.error_add(counter + 1, 3)
-        except IndexError:
-            pass
-
-    def local_check_inline_comment(self, counter, line):
-        data = line.split("#")
-        try:
-            if data[1]:
-                indent_len = len(data[0]) - len(data[0].rstrip(" "))
-                if indent_len < 2 and len(data[0]) > 1:
-                    self.error_add(counter + 1, 4)
-        except IndexError:
-            pass
-
-    def local_check_todo(self, counter, line):
-        if "#" in line and "todo" in line.lower():
-            if line.index("#") < line.lower().index("todo"):
-                self.error_add(counter + 1, 5)
 
     def check_lines_length(self):
         for counter, line in enumerate(self.file_lines):
@@ -210,20 +180,68 @@ class CodeAnalyzer(object):
                     self.error_add(counter + 1, 9)
                     continue
 
+    def check_variable_snake(self):
+        for counter, line in enumerate(self.file_lines):
+            line = line.lstrip()
+            if line.startswith("def"):
+                line = line+"    pass"
+                try:
+                    tree = ast.parse(line)
+                except SyntaxError as error:
+                    print(f"error has occurred: {counter}", error)
+                else:
+                    body = tree.body[0]
+                    #print(body.name, [b.arg for b in body.args.args], [ast.dump(a) for a in  body.args.defaults])
+                    defaults_par = [a for a in body.args.defaults if isinstance(a, ast.List)]
+                    #print(defaults_par)
+                    if defaults_par:
+                        self.error_add(counter + 1, 12)
+                    #print([search(CodeAnalyzer.template_snake, b.arg) for b in body.args.args])
+                    for var_names in body.args.args:
+                        if not search(CodeAnalyzer.template_snake, var_names.arg):
+                            self.error_add(counter + 1, 10)
+                            continue
+
+
+        """print("tree obj",self.tree)
+        #print("tree dump",ast.dump(self.tree))
+        # [a.name for a in tree.body[0].names])
+        for class_ in self.tree.body:
+            print("class obj",class_)
+            if isinstance(class_, ast.ClassDef):
+                #print("module is instanse of Class")
+                for function in class_.body:
+                    print("_________")
+                    print("funk obj",function)
+                    #print("funk dump", ast.dump(function))
+                    print("funk.args dump", ast.dump(function.args))
+                    if function.args.defaults:
+                        print("not empty")
+                        self.error_add(counter + 12, 12)
+                    for something in function.args.defaults:
+                        print("\nfunk.args.defaults dump", ast.dump(something))
+                    print("_________")
+                    #if ast.dump(function.args.defaults) is not None:
+                    #    print(ast.dump(function.args.defaults))"""
+
+    def check_var_assert(self):
+        for counter, line in enumerate(self.file_lines):
+            line = line.lstrip()
+            try:
+                tree = ast.parse(line)
+            except SyntaxError as error:
+                pass
+            else:
+                if not tree.body:
+                    continue
+                body = tree.body[0]
+                if isinstance(body, ast.Assign):
+                    for names in [a.id for a in body.targets if isinstance(a, ast.Name)]:
+                        if not search(CodeAnalyzer.template_snake, names):
+                            self.error_add(counter + 1, 11)
+                            continue
+
     def pep_checks_wrapper(self):
-        """Individually calling a function if actually faster than "for each cycle"""
-        """for self.counter, self.line in enumerate(self.file_lines):
-            self.class_check_lines_length()
-            self.class_check_indent()
-            self.class_check_semicolon()
-            self.class_check_inline_comment()
-            self.class_check_todo()"""
-        """for counter, line in enumerate(self.file_lines):
-            self.local_check_lines_length(counter, line)
-            self.local_check_indent(counter, line)
-            self.local_check_semicolon(counter, line)
-            self.local_check_inline_comment(counter, line)
-            self.local_check_todo(counter, line)"""
         """Individually calling a function if actually faster than "for each cycle"""
         self.check_lines_length()
         self.check_indent()
@@ -234,6 +252,8 @@ class CodeAnalyzer(object):
         self.check_camel_case()
         self.check_snake_case()
         self.check_spacing_after_name()
+        self.check_variable_snake()
+        self.check_var_assert()
 
     def getter_filename(self):
         return self.file
@@ -256,6 +276,7 @@ class FileFinder(object):
             files.sort()
             for file in files:
                 if file.endswith(".py"):
+                    #print(os.path.join(path, file))
                     self.exec.append(CodeAnalyzer(os.path.join(path, file)))
         elif os.path.isfile(self.path):
             self.exec.append(CodeAnalyzer(self.path))
@@ -263,10 +284,6 @@ class FileFinder(object):
             dir_content = os.listdir(self.path)
             print(dir_content)
             print("sorry your path is not gonna make it")
-
-        """elif self.path.endswith(".py"):
-            os.path.isfile(path)
-            self.exec.append(CodeAnalyzer(self.path))"""
 
     def execute_(self):
         for file in self.exec:
