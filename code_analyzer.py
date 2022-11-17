@@ -216,7 +216,7 @@ class CodeAnalyzer(object):
                             self.error_add(counter + 1, 11)
                             continue
 
-    def pep_checks_wrapper(self):
+    def pep_checks_wrapper(self) -> None:
         """Individually calling a function if actually faster than "for each cycle"""
         self.check_lines_length()
         self.check_indent()
